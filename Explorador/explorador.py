@@ -9,12 +9,12 @@ caracteres_seguros = {'☩', '⟆', '✧', '☽', '⟅', '✦', '☾', '\n'}
 #Clase Token que representa cada uno de los token encontrados por el explorador
 class Token:
     
-    def __intit__(self, tipo, lexema, linea, columna, atriuto = ""):
+    def __init__(self, tipo, lexema, linea, columna, atributo = ""):
         self.tipo = tipo
         self.lexema = lexema
         self.linea = linea
         self.columna = columna
-        self.atributo = atriuto
+        self.atributo = atributo
         
     def __repr__(self):
         return f'<"{self.tipo}", "{self.lexema}", "{self.atributo}">'
