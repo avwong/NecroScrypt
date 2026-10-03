@@ -94,5 +94,22 @@ class Explorador:
     # Conocer el caracter actual
     # Conocer el siguiente caracter
     # Avanzar al siguiente caracter
+    
+    #Hacer funcion para agregar token a la lista
+    
+    #Hacer funcion para agregar error a la lista
+    #Hacer funcion para mover en modo panico
+    
+    #Hacer funcion de escanear: (Esta la que hace todo)
+        #Se hace un while que vaya caracter por caracter y vaya haciendo llamdas a cada funcion de escaneo
+        # para los de comparacion se revisa el siguiente caracter
+        # se revisa simbolos, las estrellas y esos
+    
+    
+    
+    # Funcion para escanear comentarios
+    # Funcion para escanear cadenas
+    # Funcion para escanear numeros (Enteros y decimales)
+    # Funcion para escanear identificadores
         
         
