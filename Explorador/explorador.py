@@ -70,6 +70,29 @@ class ErrorLexico:
 # El manejo de errores se hace por medio de modo panico 
 class Explorador:
     
-    print("Explorador")
+    def __init__(self, fuente):
+        self.fuente = fuente
+        self.linea = 1
+        self.columna = 1
+        self.posicion = 0
+        self.tokens = []
+        self.errores = []
+        self.lineas = fuente.splitlines()
+        
+    #----------------------------------------------------------
+    #Funciones Auxiliares:
+    
+    def es_letra(caracter):
+        if caracter is not None and caracter.isalpha():
+            return True
+        
+    def es_digito(caracter):
+        if caracter is not None and 0 <= caracter <= '9':
+            return True
+        
+    #Hay que hacer funciones para:
+    # Conocer el caracter actual
+    # Conocer el siguiente caracter
+    # Avanzar al siguiente caracter
         
         
