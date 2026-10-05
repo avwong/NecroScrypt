@@ -90,15 +90,48 @@ class Explorador:
         if caracter is not None and 0 <= caracter <= '9':
             return True
         
-    #Hay que hacer funciones para:
-    # Conocer el caracter actual
-    # Conocer el siguiente caracter
-    # Avanzar al siguiente caracter
     
-    #Hacer funcion para agregar token a la lista
+    def actual(self):
+        if self.posicion < len(self.fuente):
+            return self.fuente[self.posicion]
+        else:
+            return None
+        
+    def siguiente(self, offset = 1):
+        indice = self.posicion + offset
+        if indice < len(self.fuente):
+            return self.fuente[indice]
+        else:
+            return None
     
-    #Hacer funcion para agregar error a la lista
-    #Hacer funcion para mover en modo panico
+    def avanzar(self):
+        if self.posicion < len(self.fuente):
+            caracter = self.fuente[self.posicion]
+            self.posicion += 1
+            if caracter == '\n':
+                self.linea += 1
+                self.columna = 1
+            else:
+                self.columna += 1
+            return caracter
+        return None
+    
+    def agregar(self, tipo, lexema, atributo = "", linea = None, columna = None):
+        if linea is None:
+            linea = self.linea
+        if columna is None:
+            columna = self.columna
+        
+        partes = []
+        
+        if atributo:
+            partes.append(atributo)
+        partes.append(f"línea = {linea}")
+        partes.append(f"columna = {columna}")
+        
+        atributo_final = ", ".join(partes)
+        
+        self.tokens.append(Token(tipo, lexema, linea, columna, atributo_final))
     
     #Hacer funcion de escanear: (Esta la que hace todo)
         #Se hace un while que vaya caracter por caracter y vaya haciendo llamdas a cada funcion de escaneo
