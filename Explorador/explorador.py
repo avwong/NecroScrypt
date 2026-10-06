@@ -133,6 +133,19 @@ class Explorador:
         
         self.tokens.append(Token(tipo, lexema, linea, columna, atributo_final))
     
+    # Funcion para agregar un error lexico a la lista de errores
+    # Arma el contexto (la linea de codigo original) y la marca ^ debajo de la columna del error
+    def registrar_error(self, mensaje, linea, columna, caracter = None, lexema_invalido = ""):
+        if 1 <= linea <= len(self.lineas):
+            contexto = self.lineas[linea - 1]
+            # Se respetan los tabs para que el ^ quede alineado con el caracter
+            marca = "".join('\t' if c == '\t' else ' ' for c in contexto[:columna - 1]) + "^"
+        else:
+            contexto = None
+            marca = ""
+        
+        self.errores.append(ErrorLexico(mensaje, linea, columna, caracter, lexema_invalido, contexto, marca))
+    
     #Hacer funcion de escanear: (Esta la que hace todo)
         #Se hace un while que vaya caracter por caracter y vaya haciendo llamdas a cada funcion de escaneo
         # para los de comparacion se revisa el siguiente caracter
