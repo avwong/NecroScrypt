@@ -146,6 +146,22 @@ class Explorador:
         
         self.errores.append(ErrorLexico(mensaje, linea, columna, caracter, lexema_invalido, contexto, marca))
     
+    # Funcion para avanzar en modo panico
+    # Descarta caracteres hasta encontrar uno de los caracteres_seguros (o el fin del archivo)
+    # NO consume el caracter seguro, para que despues se tokenice normalmente
+    # Retorna el texto descartado, que se usa como lexema invalido en el error
+    def modo_panico(self):
+        descartado = ""
+        
+        # Siempre se consume al menos el caracter malo, para no quedarse en un ciclo infinito
+        if self.actual() is not None:
+            descartado += self.avanzar()
+        
+        while self.actual() is not None and self.actual() not in caracteres_seguros:
+            descartado += self.avanzar()
+        
+        return descartado
+    
     #Hacer funcion de escanear: (Esta la que hace todo)
         #Se hace un while que vaya caracter por caracter y vaya haciendo llamdas a cada funcion de escaneo
         # para los de comparacion se revisa el siguiente caracter
