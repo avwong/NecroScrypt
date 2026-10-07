@@ -175,16 +175,90 @@ class Explorador:
         
         return descartado
     
-    #Hacer funcion de escanear: (Esta la que hace todo)
-        #Se hace un while que vaya caracter por caracter y vaya haciendo llamdas a cada funcion de escaneo
-        # para los de comparacion se revisa el siguiente caracter
-        # se revisa simbolos, las estrellas y esos
-    
-    
-    
-    # Funcion para escanear comentarios
-    # Funcion para escanear cadenas
-    # Funcion para escanear numeros (Enteros y decimales)
-    # Funcion para escanear identificadores
+    # Funcion principal del explorador.
+    # Recorre la fuente y decide que funcion debe procesar
+    # cada componente lexico.
+    def escanear(self):
+
+        simbolos = {
+            '☩': "FIN_INSTRUCCION",
+            '⟅': "PARENTESIS_IZQUIERDO",
+            '⟆': "PARENTESIS_DERECHO",
+            '✦': "INICIO_BLOQUE",
+            '✧': "FIN_BLOQUE",
+            '☽': "CORCHETE_IZQUIERDO",
+            '☾': "CORCHETE_DERECHO"
+        }
+
+        while self.actual() is not None:
+
+            caracter = self.actual()
+
+            # Espacios y tabulaciones no generan tokens
+            if caracter in {' ', '\t', '\r'}:
+                self.avanzar()
+                continue
+
+            # Saltos de linea
+            if caracter == '\n':
+                self.avanzar()
+                continue
+
+            # Se guarda donde comienza el componente lexico
+            self.marcar_inicio()
+
+            # Comentarios: ~~ comentario ~~
+            if caracter == '~' and self.siguiente() == '~':
+                self.escanear_comentario()
+                continue
+
+            # Cadenas
+            if caracter == '"':
+                self.escanear_cadena()
+                continue
+
+            # Numeros enteros o decimales
+            if self.es_digito(caracter):
+                self.escanear_numero()
+                continue
+
+            # Identificadores y palabras reservadas
+            if self.es_letra(caracter):
+                self.escanear_identificador()
+                continue
+
+            # Operador de asignacion <-
+            if caracter == '<' and self.siguiente() == '-':
+                self.avanzar()
+                self.avanzar()
+                self.agregar("ASIGNACION", "<-")
+                continue
+
+            # Simbolos simples del lenguaje
+            if caracter in simbolos:
+                tipo = simbolos[caracter]
+                self.avanzar()
+                self.agregar(tipo, caracter)
+                continue
+
+            # Si no entro en ningun caso, es un error lexico
+            linea_error = self.linea
+            columna_error = self.columna
+            caracter_error = caracter
+
+            lexema_invalido = self.modo_panico()
+
+            self.registrar_error(
+                "Caracter o secuencia no reconocida por el lenguaje",
+                linea_error,
+                columna_error,
+                caracter_error,
+                lexema_invalido
+            )
+
+        return self.tokens
         
-        
+# Funcion para escanear comentarios
+# Funcion para escanear cadenas
+# Funcion para escanear numeros (Enteros y decimales)
+# Funcion para escanear identificadores
