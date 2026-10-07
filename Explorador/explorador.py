@@ -78,17 +78,22 @@ class Explorador:
         self.tokens = []
         self.errores = []
         self.lineas = fuente.splitlines()
+        # Posicion donde empieza el token que se esta leyendo (se actualiza con marcar_inicio)
+        self.inicio_linea = 1
+        self.inicio_columna = 1
         
     #----------------------------------------------------------
     #Funciones Auxiliares:
     
+    # Segun la gramatica: Letra ::= [a-z] | [A-Z]  (sin tildes ni ñ en los nombres)
+    @staticmethod
     def es_letra(caracter):
-        if caracter is not None and caracter.isalpha():
-            return True
-        
+        return caracter is not None and (('a' <= caracter <= 'z') or ('A' <= caracter <= 'Z'))
+    
+    # Numero ::= [0-9]+
+    @staticmethod
     def es_digito(caracter):
-        if caracter is not None and 0 <= caracter <= '9':
-            return True
+        return caracter is not None and '0' <= caracter <= '9'
         
     
     def actual(self):
@@ -116,11 +121,19 @@ class Explorador:
             return caracter
         return None
     
+    # Guarda la posicion actual como el inicio del token que se va a leer
+    # Se debe llamar en escanear() ANTES de empezar a consumir cada token
+    def marcar_inicio(self):
+        self.inicio_linea = self.linea
+        self.inicio_columna = self.columna
+    
+    # Agrega un token. Si no se pasa linea/columna, usa la posicion guardada por marcar_inicio()
+    # (es decir, donde EMPIEZA el token, no donde termina)
     def agregar(self, tipo, lexema, atributo = "", linea = None, columna = None):
         if linea is None:
-            linea = self.linea
+            linea = self.inicio_linea
         if columna is None:
-            columna = self.columna
+            columna = self.inicio_columna
         
         partes = []
         
