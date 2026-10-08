@@ -259,6 +259,73 @@ class Explorador:
         return self.tokens
         
 # Funcion para escanear comentarios
+# Comentario ::= "~~"; TextoComentario; "~~"
+def escanear_comentario(self):
+    lexema = self.avanzar()  # lexema = '~'
+    lexema += self.avanzar()   # lexema = '~~'
+
+    while True:
+        # Fin de archivo sin cerrar el comentario
+        if self.actual() is None:
+            self.registrar_error(
+                "comentario sin cerrar (se esperaba '~~')",
+                self.inicio_linea, self.inicio_columna,
+                lexema_invalido=lexema
+            )
+            return
+
+        # Salto de linea antes de cerrar el comentario
+        if self.actual() == '\n':
+            self.registrar_error(
+                "comentario sin cerrar antes de fin de linea",
+                self.inicio_linea, self.inicio_columna,
+                lexema_invalido=lexema
+            )
+            return
+
+        # Se encontro el cierre "~~"
+        if self.actual() == '~' and self.siguiente() == '~':
+            lexema += self.avanzar()
+            lexema += self.avanzar()
+            self.agregar("COMENTARIO", lexema)
+            return
+
+        # Caracter normal del contenido del comentario
+        lexema += self.avanzar()
+
 # Funcion para escanear cadenas
+# Cadena ::= '"'; Texto; '"'
+def escanear_cadena(self):
+    lexema = self.avanzar()  # lexema = '"'
+
+    while True:
+        # Fin de archivo sin cerrar la cadena
+        if self.actual() is None:
+            self.registrar_error(
+                "cadena sin cerrar (se esperaba '\"')",
+                self.inicio_linea, self.inicio_columna,
+                lexema_invalido=lexema
+            )
+            return
+
+        # Salto de linea antes de cerrar la cadena
+        if self.actual() == '\n':
+            self.registrar_error(
+                "cadena sin cerrar antes de fin de linea",
+                self.inicio_linea, self.inicio_columna,
+                lexema_invalido=lexema
+            )
+            return
+
+        # Se encontro la comilla de cierre
+        if self.actual() == '"':
+            lexema += self.avanzar()
+            # atributo = contenido sin las comillas (lexema[1:-1])
+            self.agregar("CADENA", lexema, lexema[1:-1])
+            return
+
+        # Caracter normal del contenido de la cadena
+        lexema += self.avanzar()
+
 # Funcion para escanear numeros (Enteros y decimales)
 # Funcion para escanear identificadores
