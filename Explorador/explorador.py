@@ -2,9 +2,9 @@
 Explorador Léxico (Scanner) para NecroScrypt.
 Lee el código fuente caracter por caracter, reconoce tokens y detecta errores léxicos.
 """
-from asa import Token
-from errores import ErrorLexico
-from gramatica import operadores_dobles, palabras_reservadas, simbolos, tokens_seguros
+from Explorador.asa import Token
+from Explorador.errores import ErrorLexico
+from Explorador.gramatica import operadores_dobles, palabras_reservadas, simbolos, tokens_seguros
 
 
 class Explorador:

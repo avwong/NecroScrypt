@@ -1,4 +1,4 @@
-from explorador import Explorador
+from Explorador.explorador import Explorador
 
 
 def procesar_archivo(ruta_archivo):
