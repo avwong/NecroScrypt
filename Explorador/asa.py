@@ -25,30 +25,3 @@ class Token:
     """
     def __repr__(self):
         return f'<"{self.tipo}" | "{self.contenido}" | "{self.linea}" | "{self.columna}" | "{self.atributo}">'
-
-
-class NodoASA:
-    """Representa un nodo del Árbol de Sintaxis Abstracto."""
-
-    """
-    Crea el nodo
-    Argumentos: etiqueta (tipo de nodo), componente (token opcional).
-    Retorna: Nada.
-    Errores: Ninguno.
-    """
-    def __init__(self, etiqueta, componente=None):
-        self.Token
-        self.hijos = []
-
-    """
-    Agrega un nodo hijo
-    Argumentos: nodo (nodo hijo).
-    Retorna: El nodo hijo agregado.
-    Errores: Que no exista el nodo, pero ni esta el error
-    """
-    def agregar_hijo(self, nodo):
-        if not nodo:
-            return
-
-        self.hijos.append(nodo)
-        return nodo
