@@ -1,10 +1,11 @@
 from Explorador.explorador import Explorador
+from Analizador.analizador import Analizador
 
 
 def procesar_archivo(ruta_archivo):
-    """Lee un archivo .ns, lo escanea y muestra los tokens reconocidos."""
+    """Lee un .ns, escanea, parsea y muestra tokens + ASA."""
     if not ruta_archivo.endswith(".ns"):
-        print(f"Error: El archivo no termina en .ns, no es un archivo de Necroscrypt.")
+        print("Error: El archivo no termina en .ns, no es un archivo de Necroscrypt.")
         return None
 
     try:
@@ -26,7 +27,22 @@ def procesar_archivo(ruta_archivo):
     print(f"Tokens reconocidos ({len(tokens)}):")
     for tok in tokens:
         print(tok)
+    print()
 
+    # ---- Análisis sintáctico ----
+    analizador = Analizador(tokens)
+    
+    asa = analizador.analizar()
+    
+
+    if analizador.errores:
+        print(f"Se encontraron {len(analizador.errores)} errores sintacticos:\n")
+        for err in analizador.errores:
+            print(f"  - {err}")
+        print()
+
+    print("Árbol de Sintaxis Abstracta (ASA):")
+    asa.imprimir()
     return tokens
 
 
