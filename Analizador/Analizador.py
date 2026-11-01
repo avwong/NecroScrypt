@@ -486,7 +486,13 @@ class Analizador:
         if tok.tipo == "MANA":
             return self.parsear_condicional()
 
-        # 5. Ningun tipo de instruccion empieza con este token
+        # 5. Bucles: convocar y persistir (no llevan ☩)
+        if tok.tipo == "CONVOCAR":
+            return self.parsear_bucle_convocar()
+        if tok.tipo == "PERSISTIR":
+            return self.parsear_bucle_persistir()
+
+        # 6. Ningun tipo de instruccion empieza con este token
         self.errores.append(
             f"línea {tok.linea}, columna {tok.columna}: "
             f"se esperaba una instrucción, se encontró "
@@ -621,5 +627,47 @@ class Analizador:
         self.consumir("PARENTESIS_DERECHO", "⟆")
 
         # 4. Bloque que se ejecuta si se cumple la condicion
+        nodo.agregar_hijo(self.parsear_bloque())
+        return nodo
+
+    # Analiza un bucle controlado (for).
+    # Regla gramatical:
+    #   BucleConvocar ::= "convocar" Tipo Nombre "en" Expresion Bloque
+    def parsear_bucle_convocar(self):
+
+        # 1. Consume la palabra clave del bucle
+        self.consumir("CONVOCAR")
+
+        # 2. Tipo y nombre de la variable que recorre el bucle
+        tipo = self.parsear_tipo()
+        tok_nombre = self.consumir("IDENTIFICADOR", "variable del bucle")
+
+        # 3. Crea el nodo con el nombre y la posicion de la variable
+        nodo = NodoASA.desde_token("BucleConvocar", tok_nombre)
+        nodo.agregar_hijo(tipo)
+
+        # 4. Expresion que se recorre despues de "en"
+        self.consumir("EN", "en")
+        nodo.agregar_hijo(self.parsear_expresion())
+
+        # 5. Bloque que se repite
+        nodo.agregar_hijo(self.parsear_bloque())
+        return nodo
+
+    # Analiza un bucle condicional (while).
+    # Regla gramatical:
+    #   BuclePersistir ::= "persistir" ⟅ ExpresionLogica ⟆ Bloque
+    def parsear_bucle_persistir(self):
+
+        # 1. Consume la palabra clave y crea el nodo con su posicion
+        tok = self.consumir("PERSISTIR")
+        nodo = NodoASA.desde_token("BuclePersistir", tok, "")
+
+        # 2. Condicion entre parentesis
+        self.consumir("PARENTESIS_IZQUIERDO", "⟅")
+        nodo.agregar_hijo(self.parsear_expresion())
+        self.consumir("PARENTESIS_DERECHO", "⟆")
+
+        # 3. Bloque que se repite mientras se cumpla la condicion
         nodo.agregar_hijo(self.parsear_bloque())
         return nodo
