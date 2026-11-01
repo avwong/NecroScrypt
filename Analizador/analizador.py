@@ -95,18 +95,18 @@ class Analizador:
     def coincide(self, *tipos):
         return self.consultar().tipo in tipos
 
-    #Consume y devuelve el token actual. Si no es el esperado regsitra un error. Si es EOF no avanza
+    #Consume y devuelve el token actual. Si no es el esperado regsitra un error y NO avanza:
+    #se asume que el token esperado falta, asi el token encontrado lo puede usar la siguiente regla
     def consumir(self, tipo_esperado=None, contexto=""):
         tok = self.consultar()
         if tipo_esperado is not None and tok.tipo != tipo_esperado:
-            
+
             #*****Esto es de la persona 5 para manejo de errores******
             self.errores.append(
                 f"línea {tok.linea}, columna {tok.columna}: "
                 f"se esperaba {tipo_esperado}, se encontró {tok.tipo} '{tok.contenido}'"
             )
-            if tok.tipo == "EOF":
-                return tok  # no avanzar sobre EOF
+            return tok  # no avanzar, el token encontrado no se pierde
         self.pos += 1
         return tok
 
