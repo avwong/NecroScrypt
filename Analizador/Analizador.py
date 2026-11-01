@@ -482,7 +482,11 @@ class Analizador:
             self.exigir_fin_instruccion()
             return nodo
 
-        # 4. Ningun tipo de instruccion empieza con este token
+        # 4. Condicionales: mana, sin mana, sin (no llevan ☩)
+        if tok.tipo == "MANA":
+            return self.parsear_condicional()
+
+        # 5. Ningun tipo de instruccion empieza con este token
         self.errores.append(
             f"línea {tok.linea}, columna {tok.columna}: "
             f"se esperaba una instrucción, se encontró "
@@ -569,4 +573,53 @@ class Analizador:
         # 3. Consume la flecha y analiza el valor asignado
         self.consumir("ASIGNACION", "<-")
         nodo.agregar_hijo(self.parsear_expresion())
+        return nodo
+
+    # Analiza un condicional completo con sus ramas opcionales.
+    # Regla gramatical:
+    #   Condicional ::= "mana" ⟅ ExpresionLogica ⟆ Bloque
+    #                   BloqueSinMana BloqueSin
+    #   BloqueSinMana ::= "sin mana" ⟅ ExpresionLogica ⟆ Bloque
+    #                     BloqueSinMana | ε
+    #   BloqueSin ::= "sin" Bloque | ε
+    def parsear_condicional(self):
+
+        # 1. Nodo que agrupa todas las ramas del condicional
+        nodo = NodoASA("Condicional", "", "")
+
+        # 2. Rama obligatoria: mana (if)
+        nodo.agregar_hijo(self.parsear_rama_condicional("MANA", "Mana"))
+
+        # 3. Cero o mas ramas sin mana (else if)
+        while self.coincide("SIN_MANA"):
+            nodo.agregar_hijo(
+                self.parsear_rama_condicional("SIN_MANA", "SinMana")
+            )
+
+        # 4. Rama opcional sin (else), solo lleva bloque
+        if self.coincide("SIN"):
+            tok_sin = self.consumir("SIN")
+            rama = NodoASA.desde_token("Sin", tok_sin, "")
+            rama.agregar_hijo(self.parsear_bloque())
+            nodo.agregar_hijo(rama)
+
+        return nodo
+
+    # Analiza una rama con condicion: mana o sin mana.
+    # Regla gramatical: palabra ⟅ ExpresionLogica ⟆ Bloque
+    def parsear_rama_condicional(self, tipo_token, tipo_nodo):
+
+        # 1. Consume la palabra clave de la rama
+        tok = self.consumir(tipo_token)
+
+        # 2. Crea el nodo con la posicion de la palabra clave
+        nodo = NodoASA.desde_token(tipo_nodo, tok, "")
+
+        # 3. Condicion entre parentesis
+        self.consumir("PARENTESIS_IZQUIERDO", "⟅")
+        nodo.agregar_hijo(self.parsear_expresion())
+        self.consumir("PARENTESIS_DERECHO", "⟆")
+
+        # 4. Bloque que se ejecuta si se cumple la condicion
+        nodo.agregar_hijo(self.parsear_bloque())
         return nodo
