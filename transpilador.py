@@ -3,7 +3,7 @@ from Analizador.analizador import Analizador
 
 
 def procesar_archivo(ruta_archivo):
-    """Lee un .ns, escanea, parsea y muestra tokens + ASA."""
+    """Lee un archivo .ns, lo escanea y analiza, y muestra los tokens y el ASA."""
     if not ruta_archivo.endswith(".ns"):
         print("Error: El archivo no termina en .ns, no es un archivo de Necroscrypt.")
         return None
@@ -29,11 +29,8 @@ def procesar_archivo(ruta_archivo):
         print(tok)
     print()
 
-    # ---- Análisis sintáctico ----
     analizador = Analizador(tokens)
-    
     asa = analizador.analizar()
-    
 
     if analizador.errores:
         print(f"Se encontraron {len(analizador.errores)} errores sintacticos:\n")

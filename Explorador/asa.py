@@ -1,5 +1,3 @@
-
-
 class Token:
     """Representa un token reconocido con su tipo, contenido y posición."""
 

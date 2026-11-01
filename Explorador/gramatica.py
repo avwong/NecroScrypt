@@ -1,4 +1,3 @@
-
 # Tokens seguros para el modo pánico (delimitadores donde el escáner se recupera)
 tokens_seguros = {'☩', '⟆', '✧', '☽', '⟅', '✦', '☾', '\n'}
 
