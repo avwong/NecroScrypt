@@ -447,13 +447,126 @@ class Analizador:
 
         return nodo
 
+    # -------------------------------------------------------------------------
+    # Instrucciones
+    # -------------------------------------------------------------------------
 
+    # Tipos de token con los que puede iniciar una declaracion
+    INICIO_DECLARACION = (
+        "CALAVERA", "CANTICO", "ESENCIA", "LATIDO", "CENIZA", "FOSA"
+    )
 
+    # Analiza una instruccion y devuelve su nodo.
+    # Regla gramatical:
+    #   Instruccion ::= Comentario | Declaracion ☩ | Asignacion ☩
+    #                 | Llamada ☩ | Sacrificio ☩ | Condicional | Bucle
+    # Los comentarios se aceptan pero no generan nodo (se devuelve None).
+    def parsear_instruccion(self):
+        tok = self.consultar()
 
+        # 1. Los comentarios se saltan, no aparecen en el arbol
+        if tok.tipo == "COMENTARIO":
+            self.consumir()
+            return None
 
+        # 2. Declaraciones: inician con un tipo (calavera, fosa, etc.)
+        if self.coincide(*self.INICIO_DECLARACION):
+            nodo = self.parsear_declaracion()
+            self.exigir_fin_instruccion()
+            return nodo
 
+        # 3. Asignaciones: Nombre <- Expresion
+        if tok.tipo == "IDENTIFICADOR" and \
+                self.consultar(1).tipo == "ASIGNACION":
+            nodo = self.parsear_asignacion()
+            self.exigir_fin_instruccion()
+            return nodo
 
-#Esto es de la persona 3, lo pongo pq mas arriba lo uso
-def parsear_instruccion(self):
-    self.consumir()
-    return None
+        # 4. Ningun tipo de instruccion empieza con este token
+        self.errores.append(
+            f"línea {tok.linea}, columna {tok.columna}: "
+            f"se esperaba una instrucción, se encontró "
+            f"{tok.tipo} '{tok.contenido}'"
+        )
+        if tok.tipo != "EOF":
+            self.consumir()
+        return None
+
+    # Exige el punto y coma de la muerte al final de una instruccion.
+    # Regla gramatical: ... ☩
+    # Si no esta se registra el error pero NO se consume el token, asi la
+    # siguiente instruccion no se pierde.
+    def exigir_fin_instruccion(self):
+        if self.coincide("FIN_INSTRUCCION"):
+            self.consumir()
+            return
+
+        tok = self.consultar()
+        self.errores.append(
+            f"línea {tok.linea}, columna {tok.columna}: "
+            f"se esperaba '☩', se encontró {tok.tipo} '{tok.contenido}'"
+        )
+
+    # Analiza la declaracion de una variable o de una lista.
+    # Regla gramatical:
+    #   Declaracion ::= TipoPrimitivo Nombre <- Expresion
+    #                 | "fosa" TipoLista Nombre <- ☾ ListaValores ☽
+    def parsear_declaracion(self):
+
+        # 1. Analiza el tipo
+        tipo = self.parsear_tipo()
+
+        # 2. Consume el nombre de la variable
+        tok_nombre = self.consumir("IDENTIFICADOR", "nombre de la variable")
+
+        # 3. Crea el nodo Declaracion con la posicion del nombre
+        nodo = NodoASA.desde_token("Declaracion", tok_nombre)
+        nodo.agregar_hijo(tipo)
+
+        # 4. Consume la flecha de asignacion
+        self.consumir("ASIGNACION", "<-")
+
+        # 5. Las fosas reciben una lista, los demas una expresion
+        if tipo.contenido.startswith("fosa"):
+            nodo.agregar_hijo(self.parsear_lista())
+        else:
+            nodo.agregar_hijo(self.parsear_expresion())
+        return nodo
+
+    # Analiza los valores de una lista.
+    # Regla gramatical: Lista ::= ☾ (Expresion (, Expresion)*)? ☽
+    def parsear_lista(self):
+
+        # 1. Consume el corchete de apertura
+        self.consumir("CORCHETE_IZQUIERDO", "☾")
+
+        # 2. Crea el nodo Lista que agrupa los valores
+        nodo = NodoASA("Lista", "", "")
+
+        # 3. Si viene el corchete de cierre la lista esta vacia
+        if not self.coincide("CORCHETE_DERECHO"):
+            nodo.agregar_hijo(self.parsear_expresion())
+
+            # 4. Los demas valores van separados por coma
+            while self.coincide("COMA"):
+                self.consumir("COMA")
+                nodo.agregar_hijo(self.parsear_expresion())
+
+        # 5. Consume el corchete de cierre
+        self.consumir("CORCHETE_DERECHO", "☽")
+        return nodo
+
+    # Analiza la asignacion de un valor a una variable ya declarada.
+    # Regla gramatical: Asignacion ::= Nombre <- Expresion
+    def parsear_asignacion(self):
+
+        # 1. Consume el nombre de la variable
+        tok_nombre = self.consumir("IDENTIFICADOR", "nombre de la variable")
+
+        # 2. Crea el nodo Asignacion con la posicion del nombre
+        nodo = NodoASA.desde_token("Asignacion", tok_nombre)
+
+        # 3. Consume la flecha y analiza el valor asignado
+        self.consumir("ASIGNACION", "<-")
+        nodo.agregar_hijo(self.parsear_expresion())
+        return nodo
