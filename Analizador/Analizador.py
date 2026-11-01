@@ -289,6 +289,164 @@ class Analizador:
         self.consumir("FIN_BLOQUE", "cierre de bloque ✧")
         return nodo
 
+    # -------------------------------------------------------------------------
+    # Persona 4 - Expresiones
+    # -------------------------------------------------------------------------
+
+    """
+    Analiza una expresion completa respetando la precedencia de operadores.
+    La precedencia, de menor a mayor, es:
+    o -> y -> comparaciones -> suma/resta -> multiplicacion/division/restos.
+    """
+    def parsear_expresion(self):
+        return self.parsear_logica_o()
+
+
+    # Analiza el operador logico "o".
+    def parsear_logica_o(self):
+        nodo = self.parsear_logica_y()
+
+        while self.coincide("O"):
+            operador = self.consumir()
+            derecha = self.parsear_logica_y()
+            nodo = self.crear_operacion_binaria(
+                "OperacionLogica", operador, nodo, derecha
+            )
+
+        return nodo
+
+
+    # Analiza el operador logico "y".
+    def parsear_logica_y(self):
+        nodo = self.parsear_comparacion()
+
+        while self.coincide("Y"):
+            operador = self.consumir()
+            derecha = self.parsear_comparacion()
+            nodo = self.crear_operacion_binaria(
+                "OperacionLogica", operador, nodo, derecha
+            )
+
+        return nodo
+
+
+    # Analiza comparaciones: ==, !=, <, >, <= y >=.
+    def parsear_comparacion(self):
+        nodo = self.parsear_suma_resta()
+
+        if self.coincide(
+            "IGUAL_QUE",
+            "DIFERENTE_QUE",
+            "MENOR_QUE",
+            "MAYOR_QUE",
+            "MENOR_IGUAL",
+            "MAYOR_IGUAL"
+        ):
+            operador = self.consumir()
+            derecha = self.parsear_suma_resta()
+            nodo = self.crear_operacion_binaria(
+                "Comparacion", operador, nodo, derecha
+            )
+
+        return nodo
+
+
+    # Analiza ensamblar (+) y mutilar (-).
+    def parsear_suma_resta(self):
+        nodo = self.parsear_producto()
+
+        while self.coincide("ENSAMBLAR", "MUTILAR"):
+            operador = self.consumir()
+            derecha = self.parsear_producto()
+            nodo = self.crear_operacion_binaria(
+                "OperacionAritmetica", operador, nodo, derecha
+            )
+
+        return nodo
+
+
+    # Analiza infestar (*), desmembrar (/) y restos (%).
+    # Estos operadores tienen mayor precedencia que ensamblar y mutilar.
+    def parsear_producto(self):
+        nodo = self.parsear_primaria()
+
+        while self.coincide("INFESTAR", "DESMEMBRAR", "RESTOS"):
+            operador = self.consumir()
+            derecha = self.parsear_primaria()
+            nodo = self.crear_operacion_binaria(
+                "OperacionAritmetica", operador, nodo, derecha
+            )
+
+        return nodo
+
+
+    # Analiza los valores basicos que pueden formar una expresion.
+    def parsear_primaria(self):
+        token = self.consultar()
+
+        tipos_simples = {
+            "ENTERO": "Entero",
+            "DECIMAL": "Decimal",
+            "IDENTIFICADOR": "Identificador",
+            "VIVO": "Booleano",
+            "MUERTO": "Booleano",
+            "CENIZA": "Ceniza"
+        }
+
+        if token.tipo in tipos_simples:
+            self.consumir()
+            return NodoASA.desde_token(
+                tipos_simples[token.tipo],
+                token
+            )
+
+        if token.tipo == "CADENA":
+            self.consumir()
+            contenido = token.contenido[1:-1]
+            return NodoASA.desde_token(
+                "Cadena",
+                token,
+                contenido
+            )
+
+        # Permite agrupar expresiones entre parentesis.
+        if token.tipo == "PARENTESIS_IZQUIERDO":
+            self.consumir()
+            nodo = self.parsear_expresion()
+            self.consumir(
+                "PARENTESIS_DERECHO",
+                "cierre de expresion"
+            )
+            return nodo
+
+        # Persona 5 podra complementar la recuperacion del error.
+        self.errores.append(
+            f"línea {token.linea}, columna {token.columna}: "
+            f"se esperaba una expresión, se encontró "
+            f"{token.tipo} '{token.contenido}'"
+        )
+
+        if token.tipo != "EOF":
+            self.consumir()
+
+        return None
+
+
+    # Crea un nodo de operacion con sus dos operandos como hijos.
+    def crear_operacion_binaria(
+        self, tipo, operador, izquierda, derecha
+    ):
+        nodo = NodoASA(
+            tipo,
+            operador.contenido,
+            f"línea = {operador.linea}, columna = {operador.columna}"
+        )
+
+        nodo.agregar_hijo(izquierda)
+        nodo.agregar_hijo(derecha)
+
+        return nodo
+
 
 
 
