@@ -1,5 +1,5 @@
 """
-ASA construido a mano para comparar contra el que produce el analizador. 
+ASA construido a mano para comparar contra el que produce el analizador.
 Cada función devuelve el árbol de un ejemplo.
 """
 from Analizador.nodo_asa import NodoASA
