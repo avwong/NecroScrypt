@@ -8,10 +8,10 @@ de caracteres desconocidos mediante Modo Pánico.
 
 from Comun.errores import ErrorLexico
 from Comun.gramatica import (
-    operadores_dobles,
-    palabras_reservadas,
-    simbolos,
-    tokens_seguros,
+    OPERADORES_DOBLES,
+    PALABRAS_RESERVADAS,
+    SIMBOLOS,
+    TOKENS_SEGUROS,
 )
 from Comun.tokens import Token
 
@@ -30,10 +30,6 @@ class Explorador:
         self.inicio_columna = 1
         self.tokens = []
         self.errores = []
-
-    # -------------------------------------------------------------------------
-    # Navegación del cursor
-    # -------------------------------------------------------------------------
 
     def es_letra(self, caracter):
         """Comprueba si un carácter es una letra de la A a la Z."""
@@ -118,13 +114,9 @@ class Explorador:
     def modo_panico(self):
         """Descarta caracteres inválidos hasta encontrar un delimitador seguro."""
         texto_descartado = ""
-        while self.actual() is not None and self.actual() not in tokens_seguros:
+        while self.actual() is not None and self.actual() not in TOKENS_SEGUROS:
             texto_descartado += self.avanzar()
         return texto_descartado
-
-    # -------------------------------------------------------------------------
-    # Rutinas de escaneo especializadas
-    # -------------------------------------------------------------------------
 
     def escanear_comentario(self):
         """Lee un comentario completo delimitado entre '~~' y '~~'."""
@@ -255,16 +247,12 @@ class Explorador:
                 self.columna = col_inicial
 
         # Buscar si es palabra reservada o un identificador normal
-        if texto in palabras_reservadas:
-            tipo_token = palabras_reservadas[texto]
+        if texto in PALABRAS_RESERVADAS:
+            tipo_token = PALABRAS_RESERVADAS[texto]
         else:
             tipo_token = "IDENTIFICADOR"
 
         self.agregar(tipo_token, texto)
-
-    # -------------------------------------------------------------------------
-    # Bucle principal
-    # -------------------------------------------------------------------------
 
     def escanear(self):
         """Recorre todo el texto fuente y retorna la lista de Tokens reconocidos."""
@@ -300,16 +288,16 @@ class Explorador:
 
             # 6. Operadores de dos caracteres (<- , <= , >= , == , !=)
             dos_caracteres = self.mirar_adelante(2)
-            if dos_caracteres in operadores_dobles:
+            if dos_caracteres in OPERADORES_DOBLES:
                 self.avanzar()
                 self.avanzar()
-                self.agregar(operadores_dobles[dos_caracteres], dos_caracteres)
+                self.agregar(OPERADORES_DOBLES[dos_caracteres], dos_caracteres)
                 continue
 
             # 7. Símbolos individuales y operadores de un carácter
-            if caracter in simbolos:
+            if caracter in SIMBOLOS:
                 self.avanzar()
-                self.agregar(simbolos[caracter], caracter)
+                self.agregar(SIMBOLOS[caracter], caracter)
                 continue
 
             # 8. Carácter desconocido -> Modo Pánico para recuperarse

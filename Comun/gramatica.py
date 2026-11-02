@@ -2,14 +2,14 @@
 Tablas léxicas y gramaticales para NecroScrypt.
 
 Contiene las palabras reservadas, operadores, símbolos especiales y nombres
-amigables usados por el explorador y el analizador.
+de identificación de errores usados por el explorador y el analizador.
 """
 
 # Tokens seguros para el modo pánico del explorador (delimitadores de recuperación)
-tokens_seguros = {'☩', '⟆', '✧', '☽', '⟅', '✦', '☾', '\n'}
+TOKENS_SEGUROS = {'☩', '⟆', '✧', '☽', '⟅', '✦', '☾', '\n'}
 
 # Diccionario de palabras reservadas del lenguaje NecroScrypt
-palabras_reservadas = {
+PALABRAS_RESERVADAS = {
     "ritual": "RITUAL",
     "sacrificar": "SACRIFICAR",
     "mana": "MANA",
@@ -38,7 +38,7 @@ palabras_reservadas = {
 }
 
 # Operadores de dos caracteres (compuestos)
-operadores_dobles = {
+OPERADORES_DOBLES = {
     "<-": "ASIGNACION",
     "<=": "MENOR_IGUAL",
     ">=": "MAYOR_IGUAL",
@@ -47,7 +47,7 @@ operadores_dobles = {
 }
 
 # Símbolos individuales y delimitadores de un solo carácter
-simbolos = {
+SIMBOLOS = {
     '☩': "FIN_INSTRUCCION",
     '⟅': "PARENTESIS_IZQUIERDO",
     '⟆': "PARENTESIS_DERECHO",
@@ -80,8 +80,8 @@ INICIOS_DE_DECLARACION = (
     "FOSA",
 )
 
-# Nombres amigables para mostrar en los mensajes de error al programador
-NOMBRES_AMIGABLES = {
+# Identificadores amigables para mostrar en los mensajes de error al programador
+IDENTIFICADOR_ERRORES = {
     "FIN_INSTRUCCION": "☩",
     "INICIO_BLOQUE": "✦",
     "FIN_BLOQUE": "✧",
