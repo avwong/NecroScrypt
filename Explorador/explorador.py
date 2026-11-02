@@ -1,23 +1,28 @@
 """
 Explorador Léxico (Scanner) para NecroScrypt.
-Lee el código fuente caracter por caracter, reconoce tokens y detecta errores léxicos.
+
+Recorre el código fuente carácter por carácter, reconociendo tokens
+(palabras clave, identificadores, números, operadores) y recuperándose
+de caracteres desconocidos mediante Modo Pánico.
 """
-from Explorador.asa import Token
-from Explorador.errores import ErrorLexico
-from Explorador.gramatica import operadores_dobles, palabras_reservadas, simbolos, tokens_seguros
+
+from Comun.errores import ErrorLexico
+from Comun.gramatica import (
+    OPERADORES_DOBLES,
+    PALABRAS_RESERVADAS,
+    SIMBOLOS,
+    TOKENS_SEGUROS,
+)
+from Comun.tokens import Token
 
 
 class Explorador:
-    """Analizador léxico que recorre el texto y lo divide en tokens."""
+    """
+    Analizador léxico secuencial y amigable para principiantes.
+    """
 
-    """
-    Prepara el explorador para empezar a leer el texto fuente.
-    Argumentos: fuente (código a escanear como texto).
-    Retorna: Nada.
-    Errores: Ninguno.
-    """
-    def __init__(self, fuente):
-        self.fuente = fuente
+    def __init__(self, codigo_fuente):
+        self.fuente = codigo_fuente
         self.posicion = 0
         self.linea = 1
         self.columna = 1
@@ -26,151 +31,123 @@ class Explorador:
         self.tokens = []
         self.errores = []
 
-    """
-    Revisa si un caracter es una letra de la A a la Z.
-    Argumentos: caracter (caracter a revisar o None).
-    Retorna: True si es letra, False en caso contrario.
-    Errores: Ninguno.
-    """
     def es_letra(self, caracter):
-        return caracter is not None and ('a' <= caracter <= 'z' or 'A' <= caracter <= 'Z')
+        """Comprueba si un carácter es una letra de la A a la Z."""
+        if caracter is None:
+            return False
+        es_minuscula = ('a' <= caracter <= 'z')
+        es_mayuscula = ('A' <= caracter <= 'Z')
+        return es_minuscula or es_mayuscula
 
-    """
-    Revisa si un caracter es un dígito del 0 al 9.
-    Argumentos: caracter (caracter a revisar o None).
-    Retorna: True si es dígito, False en caso contrario.
-    Errores: Ninguno.
-    """
     def es_digito(self, caracter):
-        return caracter is not None and ('0' <= caracter <= '9')
+        """Comprueba si un carácter es un dígito del 0 al 9."""
+        if caracter is None:
+            return False
+        return '0' <= caracter <= '9'
 
-    """
-    Retorna el caracter en la posición actual sin avanzar.
-    Argumentos: Ninguno.
-    Retorna: El caracter actual o None si terminó el texto.
-    Errores: Ninguno.
-    """
     def actual(self):
+        """Carácter actual sin mover la posición (None al llegar al final)."""
         if self.posicion < len(self.fuente):
             return self.fuente[self.posicion]
         return None
 
-    """
-    Mira el caracter que sigue sin mover la posición actual.
-    Argumentos: Ninguno.
-    Retorna: El siguiente caracter o None si no hay más.
-    Errores: Ninguno.
-    """
     def siguiente(self):
-        futura_pos = self.posicion + 1
-        if futura_pos < len(self.fuente):
-            return self.fuente[futura_pos]
+        """Carácter inmediatamente siguiente sin mover la posición."""
+        posicion_siguiente = self.posicion + 1
+        if posicion_siguiente < len(self.fuente):
+            return self.fuente[posicion_siguiente]
         return None
 
-    """
-    Lee el caracter actual, avanza una posición y actualiza línea y columna.
-    Argumentos: Ninguno.
-    Retorna: El caracter leído o None si llegó al final.
-    Errores: Ninguno.
-    """
-    def avanzar(self):
+    def mirar_adelante(self, longitud):
+        """Lee una ventana de texto hacia adelante sin mover el cursor."""
+        return self.fuente[self.posicion:self.posicion + longitud]
+
+    def avanzar(self) -> str:
+        """
+        Avanza el cursor un carácter y actualiza número de línea y columna.
+        Retorna el carácter leído como cadena, o cadena vacía "" si ya llegó al final.
+        """
         if self.posicion < len(self.fuente):
-            caracter = self.fuente[self.posicion]
+            caracter_leido = self.fuente[self.posicion]
             self.posicion += 1
-            if caracter == '\n':
+
+            if caracter_leido == '\n':
                 self.linea += 1
                 self.columna = 1
             else:
                 self.columna += 1
-            return caracter
-        return None
 
-    """
-    Guarda la línea y columna exactas donde empieza el token actual.
-    Argumentos: Ninguno.
-    Retorna: Nada.
-    Errores: Ninguno.
-    """
+            return caracter_leido
+        return ""
+
     def marcar_inicio(self):
+        """Guarda la posición exacta donde inicia el token."""
         self.inicio_linea = self.linea
         self.inicio_columna = self.columna
 
-    """
-    Crea un nuevo Token y lo añade a la lista de tokens reconocidos.
-    Argumentos: tipo, contenido, atributo (opcional).
-    Retorna: Nada.
-    Errores: Ninguno.
-    """
     def agregar(self, tipo, contenido, atributo=""):
-        if atributo:
+        """Construye un nuevo objeto Token y lo agrega a la lista de tokens."""
+        if atributo != "":
             texto_atributo = f"{atributo}, línea = {self.inicio_linea}, columna = {self.inicio_columna}"
         else:
             texto_atributo = f"línea = {self.inicio_linea}, columna = {self.inicio_columna}"
 
-        token = Token(tipo, contenido, self.inicio_linea, self.inicio_columna, texto_atributo)
-        self.tokens.append(token)
+        nuevo_token = Token(
+            tipo=tipo,
+            contenido=contenido,
+            linea=self.inicio_linea,
+            columna=self.inicio_columna,
+            atributo=texto_atributo
+        )
+        self.tokens.append(nuevo_token)
 
-    """
-    Crea un ErrorLexico y lo guarda en la lista de errores.
-    Argumentos: token_invalido (texto con error), mensaje (descripción del fallo).
-    Retorna: Nada.
-    Errores: Registra el error léxico con su ubicación de inicio.
-    """
     def registrar_error(self, token_invalido, mensaje="Token incorrecto"):
-        error = ErrorLexico(token_invalido, self.inicio_linea, self.inicio_columna, mensaje)
-        self.errores.append(error)
+        """Registra un ErrorLexico con la ubicación de inicio."""
+        nuevo_error = ErrorLexico(
+            token=token_invalido,
+            linea=self.inicio_linea,
+            columna=self.inicio_columna,
+            mensaje=mensaje
+        )
+        self.errores.append(nuevo_error)
 
-    """
-    Descarta caracteres inválidos hasta llegar a un token seguro o fin de texto.
-    Argumentos: Ninguno.
-    Retorna: Cadena con el texto descartado durante la recuperación.
-    Errores: Ninguno.
-    """
     def modo_panico(self):
-        descartado = ""
-        while self.actual() is not None and self.actual() not in tokens_seguros:
-            descartado += self.avanzar()
-        return descartado
+        """Descarta caracteres inválidos hasta encontrar un delimitador seguro."""
+        texto_descartado = ""
+        while self.actual() is not None and self.actual() not in TOKENS_SEGUROS:
+            texto_descartado += self.avanzar()
+        return texto_descartado
 
-    """
-    Lee un comentario completo desde '~~' hasta su cierre '~~'.
-    Argumentos: Ninguno.
-    Retorna: Nada.
-    Errores: Registra error si el comentario no cierra antes del fin de línea o archivo.
-    """
     def escanear_comentario(self):
+        """Lee un comentario completo delimitado entre '~~' y '~~'."""
         texto = self.avanzar() + self.avanzar()  # Consume los dos '~' iniciales
 
         while True:
-            # Si se acaba la línea o el archivo sin cerrar el comentario
+            # Error si la línea o el archivo terminan sin cerrar el comentario
             if self.actual() is None or self.actual() == '\n':
                 self.registrar_error(texto, mensaje="Comentario sin cerrar")
                 return
 
-            # Si encontramos el cierre '~~'
+            # Cierre exitoso con '~~'
             if self.actual() == '~' and self.siguiente() == '~':
-                texto += self.avanzar() + self.avanzar()
+                texto += self.avanzar()
+                texto += self.avanzar()
                 self.agregar("COMENTARIO", texto)
                 return
 
             texto += self.avanzar()
 
-    """
-    Lee una cadena de texto entre comillas dobles "...".
-    Argumentos: Ninguno.
-    Retorna: Nada.
-    Errores: Registra error si la cadena no cierra antes del fin de línea o archivo.
-    """
     def escanear_cadena(self):
+        """Lee una cadena de texto entre comillas dobles (ejemplo: "Hola")."""
         texto = self.avanzar()  # Consume la comilla inicial '"'
 
         while True:
-            # Si se acaba la línea o el archivo sin encontrar la comilla de cierre
+            # Error si la línea o el archivo terminan sin cerrar la comilla
             if self.actual() is None or self.actual() == '\n':
                 self.registrar_error(texto, mensaje="Cadena sin cerrar")
                 return
 
-            # Si encontramos la comilla de cierre '"'
+            # Cierre exitoso con '"'
             if self.actual() == '"':
                 texto += self.avanzar()
                 contenido_sin_comillas = texto[1:-1]
@@ -179,81 +156,106 @@ class Explorador:
 
             texto += self.avanzar()
 
-    """
-    Lee números enteros o decimales (ej: 20 o 3.14)
-    Argumentos: Ninguno.
-    Retorna: Nada.
-    Errores: Registra error si el decimal no tiene dígitos, o 3.1.1.1 o 3a
-    """
     def escanear_numero(self):
+        """
+        Lee números enteros o decimales (por ejemplo: 20 o 3.14).
+
+        Paso 1: Acumula los dígitos de la parte entera.
+        Paso 2: Si hay un punto '.', valida si viene seguido de dígitos decimales.
+        Paso 3: Si hay errores (más de un punto como 1.5.0 o letras pegadas como 1a),
+                activa el modo pánico y registra el error.
+        Paso 4: Guarda el Token como 'ENTERO' o 'DECIMAL'.
+        """
         texto = ""
         while self.es_digito(self.actual()):
             texto += self.avanzar()
 
         es_decimal = False
 
-        # Si encontramos un punto, revisamos si tiene dígitos a la derecha
+        # Paso 2: Revisar si hay un punto decimal
         if self.actual() == '.':
+            # Verificar si el carácter después del punto es un dígito
             if self.es_digito(self.siguiente()):
                 es_decimal = True
-                texto += self.avanzar()  # Consume el '.'
+                texto += self.avanzar()  # Consume el punto '.'
                 while self.es_digito(self.actual()):
                     texto += self.avanzar()
             else:
-                # Punto sin dígitos después (ej: 3.)
-                texto_invalido = texto + self.modo_panico()
+                # Punto sin dígitos a la derecha (ejemplo: '3.')
+                descarte = self.modo_panico()
+                texto_invalido = texto + descarte
                 self.registrar_error(texto_invalido)
                 return
 
-        # Si viene más de un punto (ej: 1.5.0)
-        if self.actual() == '.':
-            texto_invalido = texto + self.modo_panico()
+        # Paso 3: Revisar si viene otro punto (ej: 1.5.0) o letras/guion bajo pegados (ej: 1a)
+        tiene_otro_punto = (self.actual() == '.')
+        tiene_letras_pegadas = self.es_letra(self.actual()) or (self.actual() == '_')
+
+        if tiene_otro_punto or tiene_letras_pegadas:
+            descarte = self.modo_panico()
+            texto_invalido = texto + descarte
             self.registrar_error(texto_invalido)
             return
 
-        # Si vienen letras o guión bajo pegados al número (ej: 1a)
-        if self.es_letra(self.actual()) or self.actual() == '_':
-            texto_invalido = texto + self.modo_panico()
-            self.registrar_error(texto_invalido)
-            return
+        # Paso 4: Determinar el tipo de token de forma explícita
+        if es_decimal:
+            tipo_numero = "DECIMAL"
+        else:
+            tipo_numero = "ENTERO"
 
-        tipo = "DECIMAL" if es_decimal else "ENTERO"
-        self.agregar(tipo, texto, texto)
+        self.agregar(tipo_numero, texto, texto)
 
-    """
-    Lee nombres de variables o palabras reservadas (ej: calavera, ritual, total).
-    Argumentos: Ninguno.
-    Retorna: Nada.
-    Errores: Ninguno.
-    """
     def escanear_identificador(self):
+        """
+        Lee nombres de variables, palabras reservadas o el caso compuesto 'sin mana'.
+        """
         texto = ""
-        while self.actual() is not None and (self.es_letra(self.actual()) or self.es_digito(self.actual()) or self.actual() == '_'):
+        while self.actual() is not None and (
+            self.es_letra(self.actual()) or
+            self.es_digito(self.actual()) or
+            self.actual() == '_'
+        ):
             texto += self.avanzar()
 
-        # Caso especial para la palabra reservada compuesta "sin mana"
+        # Caso especial para la palabra clave compuesta de dos términos: 'sin mana'
         if texto == "sin":
-            resto = self.fuente[self.posicion:]
-            resto_limpio = resto.lstrip(' \t')
-            if resto_limpio.startswith("mana"):
-                # Verificamos que sea la palabra completa y no algo como 'manantial'
-                siguiente_char = resto_limpio[4:5]
-                if not (self.es_letra(siguiente_char) or self.es_digito(siguiente_char) or siguiente_char == '_'):
-                    espacios = len(resto) - len(resto_limpio)
-                    for _ in range(espacios + 4):
-                        self.avanzar()
-                    texto = "sin mana"
+            pos_inicial = self.posicion
+            lin_inicial = self.linea
+            col_inicial = self.columna
 
-        tipo = palabras_reservadas.get(texto, "IDENTIFICADOR")
-        self.agregar(tipo, texto)
+            # Leer espacios intermedios en blanco
+            while self.actual() in [' ', '\t']:
+                self.avanzar()
 
-    """
-    Bucle principal que recorre todo el código fuente y genera los tokens.
-    Argumentos: Ninguno.
-    Retorna: Lista con todos los tokens reconocidos.
-    Errores: Activa modo pánico y registra errores al encontrar caracteres o secuencias inválidas.
-    """
+            sigue_palabra_mana = (self.mirar_adelante(4) == "mana")
+            caracter_despues = self.fuente[self.posicion + 4:self.posicion + 5]
+            es_otra_palabra = (
+                self.es_letra(caracter_despues) or
+                self.es_digito(caracter_despues) or
+                caracter_despues == '_'
+            )
+
+            if sigue_palabra_mana and not es_otra_palabra:
+                # Avanzar los 4 caracteres de 'mana'
+                for _ in range(4):
+                    self.avanzar()
+                texto = "sin mana"
+            else:
+                # Restaurar cursor si no era la palabra 'mana'
+                self.posicion = pos_inicial
+                self.linea = lin_inicial
+                self.columna = col_inicial
+
+        # Buscar si es palabra reservada o un identificador normal
+        if texto in PALABRAS_RESERVADAS:
+            tipo_token = PALABRAS_RESERVADAS[texto]
+        else:
+            tipo_token = "IDENTIFICADOR"
+
+        self.agregar(tipo_token, texto)
+
     def escanear(self):
+        """Recorre todo el texto fuente y retorna la lista de Tokens reconocidos."""
         while self.actual() is not None:
             caracter = self.actual()
 
@@ -262,15 +264,14 @@ class Explorador:
                 self.avanzar()
                 continue
 
-            # Marcar el inicio exacto del token
             self.marcar_inicio()
 
-            # 2. Comentarios (inician con ~~)
+            # 2. Comentarios (inician con '~~')
             if caracter == '~' and self.siguiente() == '~':
                 self.escanear_comentario()
                 continue
 
-            # 3. Cadenas de texto (inician con ")
+            # 3. Cadenas de texto entre comillas (inician con '"')
             if caracter == '"':
                 self.escanear_cadena()
                 continue
@@ -286,21 +287,21 @@ class Explorador:
                 continue
 
             # 6. Operadores de dos caracteres (<- , <= , >= , == , !=)
-            dos_caracteres = self.fuente[self.posicion:self.posicion + 2]
-            if dos_caracteres in operadores_dobles:
+            dos_caracteres = self.mirar_adelante(2)
+            if dos_caracteres in OPERADORES_DOBLES:
                 self.avanzar()
                 self.avanzar()
-                self.agregar(operadores_dobles[dos_caracteres], dos_caracteres)
+                self.agregar(OPERADORES_DOBLES[dos_caracteres], dos_caracteres)
                 continue
 
-            # 7. Símbolos individuales y operadores de un caracter (< , > , ☩ , ✦ , etc.)
-            if caracter in simbolos:
+            # 7. Símbolos individuales y operadores de un carácter
+            if caracter in SIMBOLOS:
                 self.avanzar()
-                self.agregar(simbolos[caracter], caracter)
+                self.agregar(SIMBOLOS[caracter], caracter)
                 continue
 
-            # 8. Caracter no reconocido: activar modo pánico y registrar error
-            texto_invalido = self.modo_panico()
-            self.registrar_error(texto_invalido)
+            # 8. Carácter desconocido -> Modo Pánico para recuperarse
+            descarte = self.modo_panico()
+            self.registrar_error(descarte)
 
         return self.tokens
