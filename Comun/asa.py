@@ -5,6 +5,8 @@ El ASA es una estructura de datos jerárquica (árbol) donde cada nodo represent
 una construcción gramatical del programa (declaración, ritual, bucle, expresión, etc.).
 """
 
+import re
+
 
 class NodoASA:
     """
@@ -27,6 +29,9 @@ class NodoASA:
         else:
             self.hijos = []
 
+        # Decorado semántico: tipo calculado por la inferencia de tipos
+        self.tipo_inferido = None
+
     @classmethod
     def desde_token(cls, tipo, token, contenido=None):
         """
@@ -40,6 +45,23 @@ class NodoASA:
 
         atributos_posicion = f"línea = {token.linea}, columna = {token.columna}"
         return cls(tipo, texto_contenido, atributos_posicion)
+
+    def posicion(self):
+        """
+        Extrae la línea y la columna guardadas en los atributos del nodo.
+        Si el nodo no tiene posición, la busca en sus hijos.
+
+        Retorna:
+            tuple: (linea, columna), o (0, 0) si no se encuentra.
+        """
+        coincidencia = re.search(r"línea = (\d+), columna = (\d+)", self.atributos)
+        if coincidencia:
+            return int(coincidencia.group(1)), int(coincidencia.group(2))
+        for hijo in self.hijos:
+            linea, columna = hijo.posicion()
+            if linea:
+                return linea, columna
+        return 0, 0
 
     def agregar_hijo(self, nodo_hijo):
         """
