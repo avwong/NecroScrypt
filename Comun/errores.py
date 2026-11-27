@@ -152,10 +152,3 @@ class GestorErrores:
             for err in errores_sintacticos:
                 print(f"  - {err}")
             print()
-
-        errores_semanticos = self.obtener_por_fase("semántico")
-        if len(errores_semanticos) > 0:
-            print(f"Se encontraron {len(errores_semanticos)} errores semánticos:\n")
-            for err in errores_semanticos:
-                print(f"  - {err}")
-            print()

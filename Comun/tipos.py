@@ -55,19 +55,6 @@ def tipo_fosa(tipo_elemento):
     return f"{PREFIJO_FOSA} {tipo_elemento}"
 
 
-def tipo_elemento(tipo):
-    """
-    Obtiene el tipo de los elementos de una fosa.
-
-    Retorna:
-        str: Tipo de los elementos, o DESCONOCIDO si no es una fosa con tipo.
-    """
-    partes = tipo.split(" ", 1) if tipo else []
-    if len(partes) == 2 and partes[0] == PREFIJO_FOSA:
-        return partes[1]
-    return DESCONOCIDO
-
-
 def es_compatible(tipo_destino, tipo_origen):
     """
     Indica si un valor de tipo_origen puede guardarse en algo de tipo_destino

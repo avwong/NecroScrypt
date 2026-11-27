@@ -16,9 +16,28 @@ visitar_Asignacion retorna una línea sin sangría; la sangría la agrega quien
 arma los bloques.
 """
 
+import keyword
+
 from Comun import tipos
 from Comun.visitante import Visitante
-from Generador.nombres import nombre_python
+
+# Nombres que una variable no puede tener en el Python generado: palabras
+# reservadas y funciones que el propio código generado necesita.
+NOMBRES_PROTEGIDOS = set(keyword.kwlist) | {
+    "print", "input", "str", "int", "float", "bool", "range", "len", "list",
+}
+
+
+def nombre_python(nombre):
+    """
+    Convierte un identificador de NecroScrypt en uno seguro para Python
+    (class -> class_, print -> print_). Todas las partes del generador deben
+    usarlo para que una misma variable se traduzca siempre igual.
+    """
+    if nombre in NOMBRES_PROTEGIDOS:
+        return nombre + "_"
+    return nombre
+
 
 OPERADORES_PYTHON = {
     "ensamblar": "+",
@@ -118,13 +137,8 @@ class GeneradorExpresiones(Visitante):
 
     def convertir_a(self, nodo, tipo_destino, codigo=None):
         """
-        Genera el código de una expresión convertido explícitamente al tipo
-        destino cuando hace falta.
-
-        Conversiones:
-            calavera -> esencia : float(x)
-            * -> cantico        : str(x); los latido se muestran como
-                                  vivo/muerto y la ceniza como "ceniza".
+        Genera el código de una expresión y, si se guarda una calavera donde
+        se espera una esencia, la convierte explícitamente con float().
 
         Parámetros:
             nodo: Expresión decorada con tipo_inferido.
@@ -136,18 +150,8 @@ class GeneradorExpresiones(Visitante):
         """
         if codigo is None:
             codigo = self.visitar(nodo)
-        tipo_origen = nodo.tipo_inferido
-
-        if tipo_origen == tipo_destino or tipo_origen in (None, tipos.DESCONOCIDO):
-            return codigo
-        if tipo_destino == tipos.ESENCIA and tipo_origen == tipos.CALAVERA:
+        if tipo_destino == tipos.ESENCIA and nodo.tipo_inferido == tipos.CALAVERA:
             return f"float({codigo})"
-        if tipo_destino == tipos.CANTICO:
-            if tipo_origen == tipos.LATIDO:
-                return f'("vivo" if {codigo} else "muerto")'
-            if tipo_origen == tipos.CENIZA:
-                return '"ceniza"'
-            return f"str({codigo})"
         return codigo
 
     # ------------------------------------------------------------------

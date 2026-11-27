@@ -10,31 +10,18 @@ Esta clase NO recorre las instrucciones ni administra los ámbitos: eso le
 corresponde al verificador principal, que la usa así:
 
     inferencia = InferenciaTipos(tabla, errores)
+    inferencia.inferir(nodo_expresion)
     inferencia.verificar_declaracion(nodo_declaracion)
     inferencia.verificar_asignacion(nodo_asignacion)
     inferencia.verificar_sacrificio(nodo_sacrificio, tipo_retorno_del_ritual)
-    inferencia.exigir_latido(nodo_condicion, "mana")
 
-La tabla solo necesita cumplir el contrato de Comun/simbolos.py (buscar).
+La tabla solo necesita el método buscar(nombre) (ver Comun/simbolos.py).
 """
 
 from Comun import tipos
 from Comun.errores import ErrorSemantico
 from Comun.simbolos import RITUAL
 from Comun.visitante import Visitante
-
-
-# Tipo de retorno de los rituales del ambiente estándar cuando no están
-# registrados en la tabla de símbolos. None indica que depende de los argumentos.
-RITUALES_ESTANDAR = {
-    "invocar": tipos.CENIZA,
-    "invocar_sin_salto": tipos.CENIZA,
-    "revivir": None,
-    "mundo": tipos.tipo_fosa(tipos.CALAVERA),
-    "insertar": tipos.CENIZA,
-    "extraer": None,
-    "buscar": tipos.CALAVERA,
-}
 
 # Nombres legibles de los operadores para los mensajes de error
 DESCRIPCION_OPERADOR = {
@@ -164,7 +151,7 @@ class InferenciaTipos(Visitante):
         La cantidad de argumentos la valida la tabla de símbolos.
         """
         argumentos = nodo.hijos[0].hijos if nodo.hijos else []
-        tipos_argumentos = [self.inferir_argumento(arg) for arg in argumentos]
+        tipos_argumentos = [self.inferir(arg) for arg in argumentos]
 
         simbolo = self.tabla.buscar(nodo.contenido)
         if simbolo is not None and simbolo.categoria == RITUAL:
@@ -179,36 +166,10 @@ class InferenciaTipos(Visitante):
 
         if simbolo is not None:
             self.reportar(nodo, f"'{nodo.contenido}' es una variable de tipo {simbolo.tipo}, no un ritual")
-            return self.decorar(nodo, tipos.DESCONOCIDO)
 
-        if nodo.contenido in RITUALES_ESTANDAR:
-            return self.decorar(nodo, self.tipo_ritual_estandar(nodo.contenido, argumentos, tipos_argumentos))
-
+        # Rituales no registrados en la tabla (por ejemplo, los del ambiente
+        # estándar si la tabla aún no los incluye): tipo desconocido.
         return self.decorar(nodo, tipos.DESCONOCIDO)
-
-    def inferir_argumento(self, nodo):
-        """
-        Un argumento puede ser una expresión o un tipo (revivir⟅calavera⟆).
-        En el segundo caso el "tipo" del argumento es el tipo nombrado.
-        """
-        if nodo.tipo == "Tipo":
-            return nodo.contenido
-        return self.inferir(nodo)
-
-    @staticmethod
-    def tipo_ritual_estandar(nombre, argumentos, tipos_argumentos):
-        """Tipo de retorno de un ritual del ambiente estándar."""
-        if nombre == "revivir":
-            # revivir⟅calavera⟆ lee un valor y lo convierte al tipo pedido
-            if argumentos and argumentos[0].tipo == "Tipo":
-                return argumentos[0].contenido
-            return tipos.CANTICO
-        if nombre == "extraer":
-            # extraer⟅fosa, posicion⟆ devuelve un elemento de la fosa
-            if tipos_argumentos:
-                return tipos.tipo_elemento(tipos_argumentos[0])
-            return tipos.DESCONOCIDO
-        return RITUALES_ESTANDAR[nombre]
 
     # ------------------------------------------------------------------
     # Operaciones
@@ -330,19 +291,3 @@ class InferenciaTipos(Visitante):
             )
 
         return self.decorar(nodo, tipo_valor)
-
-    def exigir_latido(self, nodo_condicion, contexto):
-        """
-        Valida que una condición (mana, sin mana, persistir) sea de tipo latido.
-
-        Parámetros:
-            nodo_condicion: Expresión de la condición.
-            contexto (str): Nombre de la estructura, para el mensaje de error.
-
-        Retorna:
-            str: Tipo inferido de la condición.
-        """
-        tipo = self.inferir(nodo_condicion)
-        if tipo not in (tipos.LATIDO, tipos.DESCONOCIDO):
-            self.reportar(nodo_condicion, f"La condición de '{contexto}' debe ser latido, pero es {tipo}")
-        return tipo

@@ -11,11 +11,6 @@ respete esta interfaz.
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-try:
-    from typing import Protocol
-except ImportError:  # pragma: no cover - Python < 3.8
-    Protocol = object
-
 
 # Categorías posibles de un símbolo
 VARIABLE = "variable"
@@ -46,16 +41,6 @@ class Simbolo:
     nodo: object = None
 
 
-class TablaSimbolos(Protocol):
-    """
-    Interfaz mínima que la inferencia de tipos espera de la tabla de símbolos.
-    """
-
-    def buscar(self, nombre: str) -> Optional[Simbolo]:
-        """
-        Busca un identificador desde el ámbito actual hacia el global.
-
-        Retorna:
-            Simbolo: El símbolo visible con ese nombre, o None si no existe.
-        """
-        ...
+# La tabla de símbolos solo necesita ofrecer:
+#     tabla.buscar(nombre) -> Simbolo o None
+# buscando desde el ámbito actual hacia el global.
