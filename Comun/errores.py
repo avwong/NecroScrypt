@@ -94,6 +94,19 @@ class ErrorSintactico(str):
         return f"<ErrorSintactico: Línea {self.linea}, Columna {self.columna}: {self.mensaje}>"
 
 
+class ErrorSemantico(ErrorCompilacion):
+    """
+    Representa un error semántico detectado por el Verificador.
+    Por ejemplo: sumar un texto con un número o asignar un tipo incompatible.
+    """
+
+    def __init__(self, linea, columna, mensaje):
+        super().__init__("semántico", linea, columna, mensaje)
+
+    def __str__(self):
+        return f"Error semántico en línea {self.linea}, columna {self.columna}: {self.mensaje}"
+
+
 class GestorErrores:
     """
     Colecciona y organiza los errores producidos durante todo el proceso
@@ -137,5 +150,12 @@ class GestorErrores:
         if len(errores_sintacticos) > 0:
             print(f"Se encontraron {len(errores_sintacticos)} errores sintacticos:\n")
             for err in errores_sintacticos:
+                print(f"  - {err}")
+            print()
+
+        errores_semanticos = self.obtener_por_fase("semántico")
+        if len(errores_semanticos) > 0:
+            print(f"Se encontraron {len(errores_semanticos)} errores semánticos:\n")
+            for err in errores_semanticos:
                 print(f"  - {err}")
             print()
