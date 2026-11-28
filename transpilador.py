@@ -15,16 +15,14 @@ from Analizador.analizador import Analizador
 from Explorador.explorador import Explorador
 from Generador.generador import GeneradorPython, escribir_archivo, ruta_salida
 from Verificador.verificador import Verificador
+from Verificador.pretty_print import PrettyPrintVisitor
 
 
 def verificar_asa(asa):
     """
-    Fase 3: verifica nombres y tipos del ASA y lo decora con las referencias
-    a los símbolos y los tipos inferidos. Imprime la tabla de símbolos cada
-    vez que cambia y los errores semánticos al final.
-
-    Argumentos:
-        asa (NodoASA): Raíz del árbol producido por el analizador.
+    Fase 3: verifica nombres y tipos del ASA y lo decora. Imprime la tabla
+    de símbolos durante el recorrido, el ASA decorado al final y los errores
+    semánticos si los hubo.
 
     Retorna:
         Verificador: El verificador, con sus errores y su tabla de símbolos.
@@ -38,6 +36,11 @@ def verificar_asa(asa):
         for err in verificador.errores:
             print(f"  - {err}")
         print()
+
+    print("Árbol de Sintaxis Abstracta decorado:")
+    PrettyPrintVisitor().imprimir(asa)
+    print()
+
     return verificador
 
 

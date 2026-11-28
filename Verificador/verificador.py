@@ -25,6 +25,7 @@ from Comun.visitante import Visitante
 from Verificador.inferencia_tipos import InferenciaTipos
 from Verificador.resolutor_nombres import ResolutorNombres
 from Verificador.tabla_simbolos import TablaSimbolos
+from Comun import tipos
 
 # Tipos de nodo que representan expresiones (producen un valor)
 EXPRESIONES = (
@@ -170,12 +171,29 @@ class Verificador(Visitante):
         self.inferencia.verificar_asignacion(nodo)
 
     def visitar_Sacrificio(self, nodo):
-        """Resuelve el valor retornado y lo compara con el tipo de retorno del ritual."""
+        """
+        Resuelve el valor retornado, valida que 'sacrificar' aparezca dentro
+        de un ritual y compara el tipo del valor con el tipo de retorno
+        declarado del ritual (⚯).
+        """
         for valor in nodo.hijos:
             self.resolutor.visitar(valor)
-        tipo_retorno = self.tipos_retorno[-1] if self.tipos_retorno else None
-        self.inferencia.verificar_sacrificio(nodo, tipo_retorno)
 
+        if not self.tipos_retorno:
+            # Fuera de cualquier ritual: no existe un tipo de retorno contra
+            # el que comparar, y el mensaje de verificar_sacrificio (que asume
+            # "ritual sin ⚯") sería engañoso. Igualmente inferimos los tipos
+            # del valor para que el resto de fases no tropiece con nodos sin
+            # decorar.
+            for valor in nodo.hijos:
+                self.inferencia.inferir(valor)
+            self.tabla.reportar(
+                nodo,
+                "La sentencia 'sacrificar' solo puede usarse dentro de un ritual",
+            )
+            return
+
+        self.inferencia.verificar_sacrificio(nodo, self.tipos_retorno[-1])
     def visitar_BucleConvocar(self, nodo):
         """
         convocar Tipo variable en coleccion ✦ ... ✧
@@ -195,3 +213,50 @@ class Verificador(Visitante):
         if bloque is not None:
             self.visitar_instrucciones(bloque)
         self.tabla.salir_ambito()
+        
+    # ------------------------------------------------------------------
+    # Estructuras de control
+    # ------------------------------------------------------------------
+
+    def verificar_condicion(self, condicion, contexto):
+        """
+        Verifica que la condición de un 'mana', 'sin mana' o 'persistir'
+        sea de tipo latido (booleana).
+
+        Si el tipo es DESCONOCIDO (por ejemplo, porque la expresión contiene
+        un nombre no declarado), no se reporta un error adicional para no
+        generar cascadas de errores.
+        """
+        if condicion is None:
+            return
+        tipo = self.verificar_expresion(condicion)
+        if tipo not in (tipos.LATIDO, tipos.DESCONOCIDO):
+            self.tabla.reportar(
+                condicion,
+                f"La condición del '{contexto}' debe ser de tipo latido, "
+                f"pero es de tipo {tipo}",
+            )
+
+    def visitar_rama_condicional(self, nodo, contexto):
+        """Visita una rama condicional con la forma [condición, Bloque]."""
+        condicion = nodo.hijos[0] if len(nodo.hijos) > 0 else None
+        bloque = nodo.hijos[1] if len(nodo.hijos) > 1 else None
+        self.verificar_condicion(condicion, contexto)
+        if bloque is not None:
+            self.visitar(bloque)
+
+    def visitar_Mana(self, nodo):
+        """Rama inicial 'mana ⟅cond⟆ ✦…✧' de un condicional."""
+        self.visitar_rama_condicional(nodo, "mana")
+
+    def visitar_SinMana(self, nodo):
+        """Rama alternativa 'sin mana ⟅cond⟆ ✦…✧' de un condicional."""
+        self.visitar_rama_condicional(nodo, "sin mana")
+
+    def visitar_BuclePersistir(self, nodo):
+        """Bucle 'persistir ⟅cond⟆ ✦…✧' (while)."""
+        condicion = nodo.hijos[0] if len(nodo.hijos) > 0 else None
+        bloque = nodo.hijos[1] if len(nodo.hijos) > 1 else None
+        self.verificar_condicion(condicion, "persistir")
+        if bloque is not None:
+            self.visitar(bloque)

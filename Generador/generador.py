@@ -19,16 +19,17 @@ from Generador.base import GeneradorBase
 from Generador.declaraciones import GeneradorDeclaraciones
 from Generador.expresiones import GeneradorExpresiones
 from Generador.rituales import GeneradorRituales
+from Generador.control import GeneradorControl
 
 
 class GeneradorPython(
     GeneradorRituales,
     GeneradorDeclaraciones,
     GeneradorExpresiones,
+    GeneradorControl,
     GeneradorBase,
 ):
     """Generador completo: traduce un ASA decorado a código Python 3.8+."""
-
 
 def ruta_salida(ruta_fuente):
     """

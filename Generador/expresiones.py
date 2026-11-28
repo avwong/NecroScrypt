@@ -134,26 +134,41 @@ class GeneradorExpresiones(Visitante):
     # ------------------------------------------------------------------
     # Conversiones de tipo
     # ------------------------------------------------------------------
+    
+    def es_revivir(self, nodo):
+        """True si el nodo es una llamada al ritual incorporado 'revivir'."""
+        return (
+            nodo is not None
+            and nodo.tipo == "LlamadaRitual"
+            and nodo.contenido == "revivir"
+        )
+        
+    @staticmethod
+    def _cast_input(codigo, tipo_destino):
+        """Castea el resultado de revivir (input(), que es str) al tipo destino."""
+        if tipo_destino == tipos.CALAVERA:
+            return f"int({codigo})"
+        if tipo_destino == tipos.ESENCIA:
+            return f"float({codigo})"
+        if tipo_destino == tipos.LATIDO:
+            return f"bool({codigo})"
+        return codigo
 
     def convertir_a(self, nodo, tipo_destino, codigo=None):
         """
-        Genera el código de una expresión y, si se guarda una calavera donde
-        se espera una esencia, la convierte explícitamente con float().
+        Genera el código de una expresión y aplica la conversión necesaria
+        para guardarla en 'tipo_destino':
 
-        Parámetros:
-            nodo: Expresión decorada con tipo_inferido.
-            tipo_destino (str): Tipo que se necesita.
-            codigo (str, opcional): Código ya generado del nodo.
-
-        Retorna:
-            str: Código Python de la expresión ya convertida.
+        - revivir (input()) se castea con int() / float() / bool() según destino.
+        - una calavera guardada en una esencia se convierte con float().
         """
         if codigo is None:
             codigo = self.visitar(nodo)
+        if self.es_revivir(nodo):
+            return self._cast_input(codigo, tipo_destino)
         if tipo_destino == tipos.ESENCIA and nodo.tipo_inferido == tipos.CALAVERA:
             return f"float({codigo})"
         return codigo
-
     # ------------------------------------------------------------------
     # Instrucciones
     # ------------------------------------------------------------------

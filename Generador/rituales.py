@@ -117,8 +117,10 @@ class GeneradorRituales:
 
     def generar_incorporada(self, nodo, argumentos):
         """
-        Traduce una llamada a un ritual incorporado. Por ahora 'invocar' se
-        traduce a print; 'revivir' todavía no tiene traducción.
+        Traduce una llamada a un ritual incorporado.
+
+            invocar⟅a, b⟆  ->  print(a, b)
+            revivir⟅⟆      ->  input()   (el cast lo aplica convertir_a)
 
         Retorna:
             str: Código Python de la llamada.
@@ -126,6 +128,8 @@ class GeneradorRituales:
         if nodo.contenido == "invocar":
             codigos = [self.visitar(argumento) for argumento in argumentos]
             return f"print({', '.join(codigos)})"
+        if nodo.contenido == "revivir":
+            return "input()"
         raise NotImplementedError(
             f"El generador todavía no traduce el ritual incorporado '{nodo.contenido}'"
         )
