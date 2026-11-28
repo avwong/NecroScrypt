@@ -1,0 +1,23 @@
+ritual main⟅⟆ ✦
+    invocar⟅"¿Cuántos años tenés?"⟆ ☩
+    calavera edad <- revivir⟅⟆ ☩
+    invocar⟅"¿Cómo te llamás?"⟆ ☩
+    cantico nombre <- revivir⟅⟆ ☩
+    invocar⟅"¿Cuánto medís (metros)?"⟆ ☩
+    esencia altura <- revivir⟅⟆ ☩
+
+    mana⟅edad >= 18⟆ ✦
+        invocar⟅"Sos mayor de edad"⟆ ☩
+    ✧
+    sin mana ⟅edad >= 13⟆ ✦
+        invocar⟅"Sos adolescente"⟆ ☩
+    ✧
+    sin ✦
+        invocar⟅"Sos menor"⟆ ☩
+    ✧
+
+    persistir⟅edad > 0⟆ ✦
+        invocar⟅edad⟆ ☩
+        edad <- edad mutilar 1 ☩
+    ✧
+✧
