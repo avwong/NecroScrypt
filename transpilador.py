@@ -4,19 +4,72 @@ Transpilador de NecroScrypt.
 Punto de entrada principal que orquesta las primeras fases del compilador/transpilador:
   1. Fase Léxica: El Explorador (Scanner) lee el archivo .ns y produce tokens.
   2. Fase Sintáctica: El Analizador (Parser) verifica la gramática y construye el ASA.
-  3. Manejo de Errores: Informa claramente cualquier error léxico o sintáctico detectado.
+  3. Fase Semántica: El Verificador revisa nombres y tipos, y decora el ASA.
+  4. Generación de Código: El Generador traduce el ASA decorado a un archivo .py.
+  5. Manejo de Errores: Informa claramente cualquier error detectado en cada fase.
 """
 
 import sys
 
 from Analizador.analizador import Analizador
 from Explorador.explorador import Explorador
+from Generador.generador import GeneradorPython, escribir_archivo, ruta_salida
+from Verificador.verificador import Verificador
+
+
+def verificar_asa(asa):
+    """
+    Fase 3: verifica nombres y tipos del ASA y lo decora con las referencias
+    a los símbolos y los tipos inferidos. Imprime la tabla de símbolos cada
+    vez que cambia y los errores semánticos al final.
+
+    Argumentos:
+        asa (NodoASA): Raíz del árbol producido por el analizador.
+
+    Retorna:
+        Verificador: El verificador, con sus errores y su tabla de símbolos.
+    """
+    print("Tabla de símbolos:")
+    verificador = Verificador()
+    verificador.verificar(asa)
+
+    if len(verificador.errores) > 0:
+        print(f"\nSe encontraron {len(verificador.errores)} errores semanticos:\n")
+        for err in verificador.errores:
+            print(f"  - {err}")
+        print()
+    return verificador
+
+
+def generar_codigo(asa, tabla, ruta_archivo):
+    """
+    Fase 4: traduce el ASA decorado a Python y escribe el archivo .py junto
+    al archivo fuente.
+
+    Argumentos:
+        asa (NodoASA): Raíz del árbol ya verificado.
+        tabla (TablaSimbolos): Tabla de símbolos del verificador.
+        ruta_archivo (str): Ruta del archivo .ns de origen.
+
+    Retorna:
+        str: Ruta del archivo .py generado, o None si no se pudo generar.
+    """
+    try:
+        codigo = GeneradorPython(tabla).generar(asa)
+    except NotImplementedError as error:
+        print(f"Error: no se pudo generar el código. {error}")
+        return None
+
+    ruta_python = ruta_salida(ruta_archivo)
+    escribir_archivo(ruta_python, codigo)
+    print(f"Código Python generado en '{ruta_python}'.")
+    return ruta_python
 
 
 def procesar_archivo(ruta_archivo):
     """
     Lee un archivo de código fuente NecroScrypt (.ns), realiza el análisis
-    léxico y sintáctico, y muestra los tokens reconocidos y el árbol generado.
+    léxico y sintáctico, verifica el árbol y genera el archivo Python de salida.
 
     Argumentos:
         ruta_archivo (str): Ruta al archivo con extensión .ns.
@@ -63,6 +116,15 @@ def procesar_archivo(ruta_archivo):
     # 5. Mostrar el Árbol de Sintaxis Abstracta (ASA) resultante
     print("Árbol de Sintaxis Abstracta (ASA):")
     asa.imprimir()
+
+    # 6. Fases 3 y 4: solo se continúa si el código no tiene errores previos
+    if len(explorador.errores) > 0 or len(analizador.errores) > 0:
+        print("No se verifica ni se genera código mientras haya errores léxicos o sintácticos.")
+        return tokens
+
+    verificador = verificar_asa(asa)
+    if len(verificador.errores) == 0:
+        generar_codigo(asa, verificador.tabla, ruta_archivo)
 
     return tokens
 
