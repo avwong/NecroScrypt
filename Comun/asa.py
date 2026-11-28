@@ -32,6 +32,10 @@ class NodoASA:
         # Decorado semántico: tipo calculado por la inferencia de tipos
         self.tipo_inferido = None
 
+        # Decorado semántico: símbolo al que hace referencia el nodo (la declaración
+        # de la variable, parámetro o ritual que usa). Lo deja el verificador.
+        self.simbolo_ref = None
+
     @classmethod
     def desde_token(cls, tipo, token, contenido=None):
         """
